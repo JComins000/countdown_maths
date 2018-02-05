@@ -1,0 +1,7 @@
+1. Download a video (youtube-dl/api)
+2. Find sections that are number games (through AUDIO), timestamp games
+3. Find numbers in those timestamped selections (discredit alpha-characters) [OCR]
+4. Feed numbers to python. Post solution(s)
+---------------
+5. Visualize the tree + overlay visualization in realtime on top of video to show computation
+6. Store data in database 

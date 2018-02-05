@@ -3,14 +3,26 @@ import operator as op
 
 four_operations = op.add, op.sub, op.mul, op.floordiv
 
-class operation_node(object):
+def get_other_numbers(numbers):
+	return [(n, numbers[:i] + numbers[i+1:]) for i, n in enumerate(numbers)]
+
+class node(object):
+	def __init__(self, numbers):
+		self.parent = None
+		self.leaves = []
+		for n, others in get_other_numbers(numbers):
+			self.leaves.append(arithmatic_node(n, others, self))
+
+	def path(self):
+		return ""
+
+class operation_node(node):
 	def __init__(self, numbers, operation, parent=None, parens=False):
 		self.operation = operation
 		self.parent = parent
 		self.leaves = []
 		self.parens = parens
-		for i, n in enumerate(numbers):
-			others = numbers[:i] + numbers[i+1:]
+		for n, others in get_other_numbers(numbers):
 			self.leaves.append(arithmatic_node(n, others, self))
 
 	def path(self):
@@ -23,14 +35,14 @@ class operation_node(object):
 			return self.parent.path() + '(' + options[self.operation] + ')'
 		return self.parent.path() + options[self.operation]
 
-class arithmatic_node(object):
+class arithmatic_node(node):
 	def __init__(self, x, other_numbers, parent=None):
 		self.parent = parent
 		self.x = x
 		self.partial_sum = 0
 		self.multiplicand = x
 
-		if parent is not None:
+		if type(parent) is operation_node:
 			operation = self.parent.operation
 			if (operation is op.add or operation is op.sub) and not self.parent.parens:
 				self.partial_sum = self.parent.parent.ans()
@@ -54,10 +66,7 @@ class arithmatic_node(object):
 		return self.partial_sum + self.multiplicand
 
 	def path(self):
-		if self.parent:
-			return self.parent.path() + str(self.x)
-		else:
-			return str(self.x)
+		return self.parent.path() + str(self.x)
 
 def switch_neighboring_indices(s, i):
 	return s[:i] + s[i+1] + s[i] + s[i+2:]
@@ -70,7 +79,7 @@ def repair_parens(s):
 	return s.replace('()','')
 
 def print_answer(target, expression, flush=False):
-	print(target, ': ', expression, flush=flush)
+	print(target, ': ', repair_parens(expression), flush=flush)
 
 def quit():
 	print('Usage: countdown_maths.py [target] [6 numbers]')
@@ -81,7 +90,7 @@ if __name__ == '__main__':
 		quit()
 	try:
 		target = int(sys.argv[1])
-		numbers = [int(n) for n in sys.argv[2:8]]
+		numbers = [int(n) for n in sys.argv[2:]]
 	except:
 		quit()
 
@@ -92,13 +101,9 @@ if __name__ == '__main__':
 		else:
 			solutions[sol] = [node]
 		if sol == target:
-			print_answer(target, repair_parens(node.path()), flush=True)
+			print_answer(target, node.path(), flush=True)
 
-	trees = []
-	for i, n in enumerate(numbers):
-		others = numbers[:i] + numbers[i+1:]
-		trees.append(arithmatic_node(n, others))
-
+	tree = node(numbers)
 	if target in solutions:
 		exit()
 	
@@ -106,16 +111,15 @@ if __name__ == '__main__':
 	for i in range(1,11):
 		distances += [(i, -i)]
 
-	print('No solution :^(')
 	target_reached = False
 	for distance in distances:
 		targets = [d + target for d in distance]
 		for t in targets:
 			if t in solutions:
 				for sol in solutions[t]:
-					print_answer(t, repair_parens(sol.path()))
+					print_answer(t, sol.path())
 				target_reached = True
 		if target_reached:
 			exit()
 		else:
-			print('No target', targets)
+			print('No solution', targets)

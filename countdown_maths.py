@@ -79,7 +79,7 @@ class arithmetic_node(node):
 				self.leaves.append(operation_node(operation, self))
 			self.leaves.append(operation_node(op.add, self, parens=True))
 			self.leaves.append(operation_node(op.sub, self, parens=True))
-			
+
 		for leaf in self.leaves:
 			leaf.new_number(x)
 
@@ -128,23 +128,6 @@ if __name__ == '__main__':
 	tree = root()
 	for n in numbers:
 		tree.new_number(n)
-	if target in solutions:
-		print(len(solutions[target], "solutions"))
-		exit()
 	
-	distances = [(0,)]
-	for i in range(1,11):
-		distances += [(i, -i)]
-
-	target_reached = False
-	for distance in distances:
-		targets = [d + target for d in distance]
-		for t in targets:
-			if t in solutions:
-				for sol in solutions[t]:
-					print_answer(t, sol.path())
-				target_reached = True
-		if target_reached:
-			exit()
-		else:
-			print('No solution', targets)
+	for i in range(-10,11):
+		print("target", i+target, ":", len(solutions[target+i]), "solutions")

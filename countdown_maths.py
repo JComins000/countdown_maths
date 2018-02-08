@@ -38,9 +38,10 @@ class operation_node(node):
 		for leaf in self.leaves:
 			leaf.new_number(x)
 		new_leaf = arithmetic_node(x, self)
-		for n in self.parent.numbers:
+		for n in self.numbers:
 			new_leaf.new_number(n)
 		self.leaves.append(new_leaf)
+		self.numbers.append(x)
 
 	def path(self):
 		options = {op.add: " + ",
@@ -57,10 +58,6 @@ class arithmetic_node(node):
 		super().__init__()
 		self.parent = parent
 		self.x = x
-		for operation in four_operations:
-			self.leaves.append(operation_node(operation, self))
-		self.leaves.append(operation_node(op.add, self, parens=True))
-		self.leaves.append(operation_node(op.sub, self, parens=True))
 
 		if type(self.parent) is root:
 			self.partial_sum = 0
@@ -77,9 +74,14 @@ class arithmetic_node(node):
 		submit_solution(self.ans(), self)
 
 	def new_number(self, x):
+		if not self.leaves:
+			for operation in four_operations:
+				self.leaves.append(operation_node(operation, self))
+			self.leaves.append(operation_node(op.add, self, parens=True))
+			self.leaves.append(operation_node(op.sub, self, parens=True))
+			
 		for leaf in self.leaves:
 			leaf.new_number(x)
-		self.numbers.append(x)
 
 	def ans(self):
 		return self.partial_sum + self.multiplicand

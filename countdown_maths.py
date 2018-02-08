@@ -3,27 +3,44 @@ import operator as op
 
 four_operations = op.add, op.sub, op.mul, op.floordiv
 
-def get_other_numbers(numbers):
-	return [(n, numbers[:i] + numbers[i+1:]) for i, n in enumerate(numbers)]
-
 class node(object):
-	def __init__(self, numbers):
+	def __init__(self):
 		self.parent = None
 		self.leaves = []
-		for n, others in get_other_numbers(numbers):
-			self.leaves.append(arithmatic_node(n, others, self))
+		self.numbers = []
 
 	def path(self):
 		return ""
 
+class root(node):
+	def __init__(self):
+		super().__init__()	
+
+	def new_number(self, x):
+		for leaf in self.leaves:
+			leaf.new_number(x)
+		new_leaf = arithmetic_node(x, self)
+		for n in self.numbers:
+			new_leaf.new_number(n)
+		self.leaves.append(new_leaf)
+		self.numbers.append(x)
+
 class operation_node(node):
-	def __init__(self, numbers, operation, parent=None, parens=False):
+	def __init__(self, operation, parent, parens=False):
+		super().__init__()
 		self.operation = operation
 		self.parent = parent
-		self.leaves = []
 		self.parens = parens
-		for n, others in get_other_numbers(numbers):
-			self.leaves.append(arithmatic_node(n, others, self))
+
+	def new_number(self, x):
+		if self.operation is op.floordiv and self.parent.multiplicand % x:
+			return
+		for leaf in self.leaves:
+			leaf.new_number(x)
+		new_leaf = arithmetic_node(x, self)
+		for n in self.parent.numbers:
+			new_leaf.new_number(n)
+		self.leaves.append(new_leaf)
 
 	def path(self):
 		options = {op.add: " + ",
@@ -35,32 +52,34 @@ class operation_node(node):
 			return self.parent.path() + '(' + options[self.operation] + ')'
 		return self.parent.path() + options[self.operation]
 
-class arithmatic_node(node):
-	def __init__(self, x, other_numbers, parent=None):
+class arithmetic_node(node):
+	def __init__(self, x, parent):
+		super().__init__()
 		self.parent = parent
 		self.x = x
-		self.partial_sum = 0
-		self.multiplicand = x
+		for operation in four_operations:
+			self.leaves.append(operation_node(operation, self))
+		self.leaves.append(operation_node(op.add, self, parens=True))
+		self.leaves.append(operation_node(op.sub, self, parens=True))
 
-		if type(parent) is operation_node:
+		if type(self.parent) is root:
+			self.partial_sum = 0
+			self.multiplicand = x
+		else:
 			operation = self.parent.operation
 			if (operation is op.add or operation is op.sub) and not self.parent.parens:
 				self.partial_sum = self.parent.parent.ans()
 				self.multiplicand = operation(0, x)
 			else:
-				if operation is op.floordiv and self.parent.parent.multiplicand % x:
-					return
 				self.partial_sum = self.parent.parent.partial_sum
 				self.multiplicand = operation(self.parent.parent.multiplicand, x)
 		
 		submit_solution(self.ans(), self)
-		self.leaves = []
 
-		if other_numbers:
-			for operation in four_operations:
-				self.leaves.append(operation_node(other_numbers, operation, self))
-			self.leaves.append(operation_node(other_numbers, op.add, self, True))
-			self.leaves.append(operation_node(other_numbers, op.sub, self, True))
+	def new_number(self, x):
+		for leaf in self.leaves:
+			leaf.new_number(x)
+		self.numbers.append(x)
 
 	def ans(self):
 		return self.partial_sum + self.multiplicand
@@ -103,8 +122,12 @@ if __name__ == '__main__':
 		if sol == target:
 			print_answer(target, node.path(), flush=True)
 
-	tree = node(numbers)
+
+	tree = root()
+	for n in numbers:
+		tree.new_number(n)
 	if target in solutions:
+		print(len(solutions[target], "solutions"))
 		exit()
 	
 	distances = [(0,)]
